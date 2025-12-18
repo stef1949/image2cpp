@@ -195,7 +195,12 @@ export function processImage(
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const { data } = imageData;
   
-  const conversionKey = settings.drawMode + (settings.conversionFunction ? '1bit' : '');
+  // Determine the correct conversion function based on draw mode
+  let conversionKey = settings.drawMode;
+  if (settings.drawMode === 'horizontal' || settings.drawMode === 'vertical') {
+    conversionKey = settings.drawMode + '1bit';
+  }
+  
   const convFn = conversionFunctions[conversionKey as keyof typeof conversionFunctions];
   
   if (convFn) {

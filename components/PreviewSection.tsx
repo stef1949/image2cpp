@@ -1,38 +1,28 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { ImageObject } from '@/lib/types';
 
 interface PreviewSectionProps {
   images: ImageObject[];
 }
 
+interface CanvasPreview {
+  id: string;
+  glyph: string;
+  canvas: HTMLCanvasElement;
+}
+
 export default function PreviewSection({ images }: PreviewSectionProps) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [previews, setPreviews] = useState<CanvasPreview[]>([]);
 
   useEffect(() => {
-    if (containerRef.current) {
-      // Clear existing canvases
-      containerRef.current.innerHTML = '';
-      
-      // Add new canvases
-      images.forEach((image, index) => {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200';
-        
-        const label = document.createElement('div');
-        label.className = 'text-sm font-medium text-gray-700';
-        label.textContent = image.glyph || `Image ${index + 1}`;
-        
-        const canvasWrapper = document.createElement('div');
-        canvasWrapper.className = 'bg-white p-2 rounded border border-gray-300';
-        canvasWrapper.appendChild(image.canvas);
-        
-        wrapper.appendChild(label);
-        wrapper.appendChild(canvasWrapper);
-        containerRef.current?.appendChild(wrapper);
-      });
-    }
+    const newPreviews = images.map((image, index) => ({
+      id: `canvas-${index}-${Date.now()}`,
+      glyph: image.glyph || `Image ${index + 1}`,
+      canvas: image.canvas,
+    }));
+    setPreviews(newPreviews);
   }, [images]);
 
   return (
@@ -59,11 +49,32 @@ export default function PreviewSection({ images }: PreviewSectionProps) {
           <p className="text-sm">Upload some images to see them here</p>
         </div>
       ) : (
-        <div 
-          ref={containerRef}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {previews.map((preview) => (
+            <CanvasPreviewItem key={preview.id} preview={preview} />
+          ))}
+        </div>
       )}
+    </div>
+  );
+}
+
+function CanvasPreviewItem({ preview }: { preview: CanvasPreview }) {
+  const containerRef = useEffect(() => {
+    // Component will handle mounting the canvas
+  }, []);
+
+  return (
+    <div className="flex flex-col items-center gap-2 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <div className="text-sm font-medium text-gray-700">{preview.glyph}</div>
+      <div 
+        className="bg-white p-2 rounded border border-gray-300"
+        ref={(node) => {
+          if (node && !node.contains(preview.canvas)) {
+            node.appendChild(preview.canvas);
+          }
+        }}
+      />
     </div>
   );
 }
