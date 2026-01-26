@@ -32,7 +32,7 @@ function dithering(ctx, width, height, threshold, typeIndex) {
   const imageDataLength = imageData.data.length;
 
   // Greyscale luminance (sets r pixels to luminance of rgb)
-  for (let i = 0; i <= imageDataLength; i += 4) {
+  for (let i = 0; i < imageDataLength; i += 4) {
     imageData.data[i] =
       Math.floor(lumR[imageData.data[i]] + lumG[imageData.data[i + 1]] + lumB[imageData.data[i + 2]]);
   }
@@ -41,7 +41,7 @@ function dithering(ctx, width, height, threshold, typeIndex) {
   let newPixel; let
     err;
 
-  for (let currentPixel = 0; currentPixel <= imageDataLength; currentPixel += 4) {
+  for (let currentPixel = 0; currentPixel < imageDataLength; currentPixel += 4) {
     if (type === 'binary') {
       // No dithering
       imageData.data[currentPixel] = imageData.data[currentPixel] < threshold ? 0 : 255;
@@ -53,7 +53,7 @@ function dithering(ctx, width, height, threshold, typeIndex) {
       const map = Math.floor((imageData.data[currentPixel] + bayerThresholdMap[x % 4][y % 4]) / 2);
       imageData.data[currentPixel] = (map < threshold) ? 0 : 255;
     } else if (type === 'floydsteinberg') {
-      // Floydaâ‚¬"Steinberg dithering algorithm
+      // Floyd-Steinberg dithering algorithm
       newPixel = imageData.data[currentPixel] < 129 ? 0 : 255;
       err = Math.floor((imageData.data[currentPixel] - newPixel) / 16);
       imageData.data[currentPixel] = newPixel;
