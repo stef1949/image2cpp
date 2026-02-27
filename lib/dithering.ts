@@ -1,17 +1,25 @@
-/* eslint-disable no-plusplus */
-const bwrPalette = [
+type Palette = number[][];
+type DitheringType = 'binary' | 'bayer' | 'floydsteinberg' | 'atkinson';
+
+export const bwrPalette: Palette = [
   [0, 0, 0, 255],
   [255, 255, 255, 255],
   [255, 0, 0, 255],
 ];
 
-const bwPalette = [
+export const bwPalette: Palette = [
   [0, 0, 0, 255],
   [255, 255, 255, 255],
 ];
 
-function dithering(ctx, width, height, threshold, typeIndex) {
-  const type = ['binary', 'bayer', 'floydsteinberg', 'atkinson'][typeIndex];
+export function dithering(
+  ctx: CanvasRenderingContext2D,
+  width: number,
+  height: number,
+  threshold: number,
+  typeIndex: number
+): void {
+  const type: DitheringType = ['binary', 'bayer', 'floydsteinberg', 'atkinson'][typeIndex] as DitheringType;
   const bayerThresholdMap = [
     [15, 135, 45, 165],
     [195, 75, 225, 105],
@@ -19,9 +27,9 @@ function dithering(ctx, width, height, threshold, typeIndex) {
     [240, 120, 210, 90],
   ];
 
-  const lumR = [];
-  const lumG = [];
-  const lumB = [];
+  const lumR: number[] = [];
+  const lumG: number[] = [];
+  const lumB: number[] = [];
   for (let i = 0; i < 256; i++) {
     lumR[i] = i * 0.299;
     lumG[i] = i * 0.587;
@@ -32,28 +40,27 @@ function dithering(ctx, width, height, threshold, typeIndex) {
   const imageDataLength = imageData.data.length;
 
   // Greyscale luminance (sets r pixels to luminance of rgb)
-  for (let i = 0; i < imageDataLength; i += 4) {
+  for (let i = 0; i <= imageDataLength; i += 4) {
     imageData.data[i] =
       Math.floor(lumR[imageData.data[i]] + lumG[imageData.data[i + 1]] + lumB[imageData.data[i + 2]]);
   }
 
   const w = imageData.width;
-  let newPixel; let
-    err;
+  let newPixel: number;
+  let err: number;
 
-  for (let currentPixel = 0; currentPixel < imageDataLength; currentPixel += 4) {
+  for (let currentPixel = 0; currentPixel <= imageDataLength; currentPixel += 4) {
     if (type === 'binary') {
       // No dithering
       imageData.data[currentPixel] = imageData.data[currentPixel] < threshold ? 0 : 255;
     } else if (type === 'bayer') {
       // 4x4 Bayer ordered dithering algorithm
-      // eslint-disable-next-line no-mixed-operators
-      const x = currentPixel / 4 % w;
+      const x = Math.floor(currentPixel / 4) % w;
       const y = Math.floor(currentPixel / 4 / w);
       const map = Math.floor((imageData.data[currentPixel] + bayerThresholdMap[x % 4][y % 4]) / 2);
       imageData.data[currentPixel] = (map < threshold) ? 0 : 255;
     } else if (type === 'floydsteinberg') {
-      // Floyd-Steinberg dithering algorithm
+      // Floyd–Steinberg dithering algorithm
       newPixel = imageData.data[currentPixel] < 129 ? 0 : 255;
       err = Math.floor((imageData.data[currentPixel] - newPixel) / 16);
       imageData.data[currentPixel] = newPixel;
@@ -85,12 +92,16 @@ function dithering(ctx, width, height, threshold, typeIndex) {
   ctx.putImageData(imageData, 0, 0);
 }
 
-function canvas2bytes(canvas, type = 'bw') {
+export function canvas2bytes(canvas: HTMLCanvasElement, type: string = 'bw'): number[] {
   const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not get canvas context');
+  }
+  
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
 
-  const arr = [];
-  let buffer = [];
+  const arr: number[] = [];
+  let buffer: number[] = [];
 
   for (let x = canvas.width - 1; x >= 0; x--) {
     for (let y = 0; y < canvas.height; y++) {
@@ -110,36 +121,7 @@ function canvas2bytes(canvas, type = 'bw') {
   return arr;
 }
 
-function getColorDistance(rgba1, rgba2) {
-  const [r1, b1, g1] = rgba1;
-  const [r2, b2, g2] = rgba2;
-
-  const rm = (r1 + r2) / 2;
-
-  const r = r1 - r2;
-  const g = g1 - g2;
-  const b = b1 - b2;
-
-  return Math.sqrt((2 + rm / 256) * r * r + 4 * g * g + (2 + (255 - rm) / 256) * b * b);
-}
-
-function getNearColor(pixel, palette) {
-  let minDistance = 255 * 255 * 3 + 1;
-  let paletteIndex = 0;
-
-  for (let i = 0; i < palette.length; i++) {
-    const targetColor = palette[i];
-    const distance = getColorDistance(pixel, targetColor);
-    if (distance < minDistance) {
-      minDistance = distance;
-      paletteIndex = i;
-    }
-  }
-
-  return palette[paletteIndex];
-}
-
-function getNearColorV2(color, palette) {
+function getNearColorV2(color: Uint8ClampedArray | number[], palette: Palette): number[] {
   let minDistanceSquared = 255 * 255 + 255 * 255 + 255 * 255 + 1;
 
   let bestIndex = 0;
@@ -156,36 +138,40 @@ function getNearColorV2(color, palette) {
   return palette[bestIndex];
 }
 
-function updatePixel(imageData, index, color) {
+function updatePixel(imageData: Uint8ClampedArray, index: number, color: number[]): void {
   imageData[index] = color[0];
   imageData[index + 1] = color[1];
   imageData[index + 2] = color[2];
   imageData[index + 3] = color[3];
 }
 
-function getColorErr(color1, color2, rate) {
-  const res = [];
+function getColorErr(color1: Uint8ClampedArray | number[], color2: number[], rate: number): number[] {
+  const res: number[] = [];
   for (let i = 0; i < 3; i++) {
     res.push(Math.floor((color1[i] - color2[i]) / rate));
   }
   return res;
 }
 
-function updatePixelErr(imageData, index, err, rate) {
+function updatePixelErr(imageData: Uint8ClampedArray, index: number, err: number[], rate: number): void {
   imageData[index] += err[0] * rate;
   imageData[index + 1] += err[1] * rate;
   imageData[index + 2] += err[2] * rate;
 }
 
-function ditheringCanvasByPalette(canvas, palette, type) {
-  palette = palette || bwrPalette;
+export function ditheringCanvasByPalette(canvas: HTMLCanvasElement, palette: Palette | null, type: string): void {
+  const usePalette = palette || bwrPalette;
 
   const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Could not get canvas context');
+  }
+  
   const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
   const w = imageData.width;
 
   for (let currentPixel = 0; currentPixel <= imageData.data.length; currentPixel += 4) {
-    const newColor = getNearColorV2(imageData.data.slice(currentPixel, currentPixel + 4), palette);
+    const newColor = getNearColorV2(imageData.data.slice(currentPixel, currentPixel + 4), usePalette);
 
     if (type === 'bwr_floydsteinberg') {
       const err = getColorErr(imageData.data.slice(currentPixel, currentPixel + 4), newColor, 16);

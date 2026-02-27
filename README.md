@@ -17,6 +17,30 @@ Did you find this tool useful? Feel free to support my open source software (esp
 ### Running the tool
 You can download and view the `index.html` file locally, or visit the online version at http://javl.github.io/image2cpp/
 
+### Development
+This project has been modernized with TypeScript for better type safety and maintainability.
+
+**Development server:**
+```bash
+npm install
+npm run dev
+```
+
+**Build for production:**
+```bash
+npm run build
+```
+
+**Type checking:**
+```bash
+npm run type-check
+```
+
+The source code is located in the `src/` directory:
+- `src/main.ts` - Main application logic
+- `src/dithering.ts` - Dithering algorithms
+- `src/types.ts` - TypeScript type definitions
+
 ### Example Arduino code
 You can find a simple Arduino example sketch [over here](https://github.com/javl/image2cpp/blob/master/oled_example/oled_example.ino) in the repository.
 
